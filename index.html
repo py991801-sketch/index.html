@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FlixTime Premium</title>
+    <style>
+        :root {
+            --bg-color: #0A1128;
+            --accent-color: #FF0044;
+            --text-color: #ffffff;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            padding-bottom: 20px;
+        }
+        header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(10, 17, 40, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: var(--accent-color);
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 0, 68, 0.5);
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px rgba(255, 0, 68, 0.4);
+        }
+        .category {
+            margin-top: 25px;
+            padding-left: 15px;
+        }
+        h2 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #ddd;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 8px;
+        }
+        .row {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding-right: 15px;
+            padding-bottom: 10px;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .row::-webkit-scrollbar {
+            display: none;
+        }
+        .poster {
+            width: 130px;
+            height: 195px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: #1a2238;
+        }
+        .poster:active {
+            transform: scale(0.95);
+        }
+        
+        /* Modal & Player Settings */
+        #playerModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .player-header {
+            background-color: #111;
+            padding: 10px 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+        
+        .btn-custom {
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-custom.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #aaa;
+        }
+
+        .slider-container input[type="range"] {
+            width: 70px;
+        }
+
+        #closeBtn {
+            background-color: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .iframe-container {
+            flex-grow: 1;
+            width: 100%;
+            background: #000;
+        }
+
+        #playerIframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            transition: filter 0.3s;
+        }
+
+        #loadingMsg {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>FlixTime</h1>
+        <input type="text" id="searchInput" placeholder="Search movies, shows...">
+    </header>
+
+    <main>
+        <div id="loadingMsg">Searching...</div>
+
+        <div id="searchResults" class="category" style="display:none;">
+            <h2>Search Results</h2>
+            <div class="row" id="searchRow"></div>
+        </div>
+
+        <!-- NEW RELEASES SECTION -->
+        <div class="category">
+            <h2>🔥 Latest Releases (New)</h2>
+            <div class="row" id="latestRow"></div>
+        </div>
+
+        <div class="category">
+            <h2>Trending Now</h2>
+            <div class="row" id="trendingRow"></div>
+        </div>
+
+        <div class="category">
+            <h2>Hollywood Blockbusters</h2>
+            <div class="row" id="hollywoodRow"></div>
+        </div>
+
+        <div class="category">
+            <h2>Bollywood Hits</h2>
+            <div class="row" id="bollywoodRow"></div>
+        </div>
+
+        <div class="category">
+            <h2>South Indian (Dubbed)</h2>
+            <div class="row" id="southIndianRow"></div>
+        </div>
+
+    </main>
+
+    <div id="playerModal">
+        <div class="player-header">
+            <div class="control-group">
+                <button class="btn-custom active" id="btnAudioEng" onclick="setAudio('en')">English</button>
+                <button class="btn-custom" id="btnAudioHin" onclick="setAudio('hi')">Hindi/Dual</button>
+            </div>
+            <div class="control-group">
+                <span style="color:#aaa;">Quality:</span>
+                <button class="btn-custom active">Auto</button>
+                <button class="btn-custom" onclick="alert('Premium Direct Link Required for fixed 720p')">720p</button>
+                <button class="btn-custom" onclick="alert('Premium Direct Link Required for fixed 1080p')">1080p</button>
+            </div>
+            <div class="control-group">
+                <div class="slider-container">
+                    ☀️ <input type="range" id="brightnessSlider" min="0.5" max="1.5" step="0.1" value="1">
+                </div>
+                <div class="slider-container">
+                    🌗 <input type="range" id="contrastSlider" min="0.5" max="1.5" step="0.1" value="1">
+                </div>
+            </div>
+            <button id="closeBtn">X Close</button>
+        </div>
+        
+        <div class="iframe-container">
+            <iframe id="playerIframe" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '2d45e26903f728b925fea962b8e7ddf0';
+        const BASE_URL = 'https://api.themoviedb.org/3';
+        const IMG_URL = 'https://image.tmdb.org/t/p/w500';
+
+        const categories = [
+            { id: 'latestRow', url: `/movie/now_playing?api_key=${API_KEY}&region=IN` },
+            { id: 'trendingRow', url: `/trending/all/day?api_key=${API_KEY}` },
+            { id: 'hollywoodRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=en&sort_by=popularity.desc` },
+            { id: 'bollywoodRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=hi&sort_by=popularity.desc` },
+            { id: 'southIndianRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=te|ta|ml|kn&sort_by=popularity.desc` }
+        ];
+
+        function fetchMovies(url, rowId) {
+            fetch(BASE_URL + url)
+                .then(res => res.json())
+                .then(data => {
+                    const row = document.getElementById(rowId);
+                    row.innerHTML = '';
+                    if(data.results && data.results.length > 0) {
+                        data.results.forEach(item => {
+                            if(item.poster_path) {
+                                const img = document.createElement('img');
+                                img.src = IMG_URL + item.poster_path;
+                                img.className = 'poster';
+                                img.alt = item.title || item.name;
+                                img.loading = 'lazy';
+                                const mediaType = item.media_type || 'movie';
+                                img.onclick = () => openPlayer(item.id, mediaType);
+                                row.appendChild(img);
+                            }
+                        });
+                    }
+                });
+        }
+
+        categories.forEach(cat => fetchMovies(cat.url, cat.id));
+
+        // Search logic
+        const searchInput = document.getElementById('searchInput');
+        const searchSection = document.getElementById('searchResults');
+        const searchRow = document.getElementById('searchRow');
+        const loadingMsg = document.getElementById('loadingMsg');
+        let debounceTimer;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            const query = e.target.value.trim();
+            if (query === '') {
+                searchSection.style.display = 'none';
+                return;
+            }
+            loadingMsg.style.display = 'block';
+            debounceTimer = setTimeout(() => {
+                fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        searchRow.innerHTML = '';
+                        loadingMsg.style.display = 'none';
+                        const results = data.results ? data.results.filter(item => (item.media_type === 'movie' || item.media_type === 'tv') && item.poster_path) : [];
+                        if(results.length > 0) {
+                            searchSection.style.display = 'block';
+                            results.forEach(item => {
+                                const img = document.createElement('img');
+                                img.src = IMG_URL + item.poster_path;
+                                img.className = 'poster';
+                                img.onclick = () => openPlayer(item.id, item.media_type);
+                                searchRow.appendChild(img);
+                            });
+                        } else {
+                            searchSection.style.display = 'none';
+                        }
+                    });
+            }, 600);
+        });
+
+        // Player & Controls Logic
+        let currentId = '';
+        let currentType = '';
+        const iframe = document.getElementById('playerIframe');
+        const bSlider = document.getElementById('brightnessSlider');
+        const cSlider = document.getElementById('contrastSlider');
+
+        function openPlayer(id, type) {
+            currentId = id;
+            currentType = (type === 'tv') ? 'tv' : 'movie';
+            const modal = document.getElementById('playerModal');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            // Reset adjustments
+            bSlider.value = 1;
+            cSlider.value = 1;
+            applyPictureAdjustments();
+            
+            setAudio('en'); // Default play
+        }
+
+        function setAudio(lang) {
+            document.getElementById('btnAudioEng').classList.remove('active');
+            document.getElementById('btnAudioHin').classList.remove('active');
+            
+            if(lang === 'en') {
+                document.getElementById('btnAudioEng').classList.add('active');
+                iframe.src = `https://vidsrc.me/embed/${currentType}/${currentId}`;
+            } else {
+                document.getElementById('btnAudioHin').classList.add('active');
+                // Autoembed server has high chances of Hindi/Dual audio
+                if(currentType === 'movie') {
+                    iframe.src = `https://autoembed.co/movie/tmdb/${currentId}`;
+                } else {
+                    iframe.src = `https://autoembed.co/tv/tmdb/${currentId}-1-1`;
+                }
+            }
+        }
+
+        function applyPictureAdjustments() {
+            iframe.style.filter = `brightness(${bSlider.value}) contrast(${cSlider.value})`;
+        }
+
+        bSlider.addEventListener('input', applyPictureAdjustments);
+        cSlider.addEventListener('input', applyPictureAdjustments);
+
+        document.getElementById('closeBtn').onclick = () => {
+            const modal = document.getElementById('playerModal');
+            modal.style.display = 'none';
+            iframe.src = '';
+            document.body.style.overflow = '';
+        };
+    </script>
+</body>
+  </html>
+  
