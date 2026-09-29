@@ -110,7 +110,6 @@
             display: none;
             flex-direction: column;
         }
-        
         .player-header {
             background-color: #111;
             padding: 10px 15px;
@@ -121,14 +120,12 @@
             align-items: center;
             border-bottom: 1px solid #333;
         }
-        
         .control-group {
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 12px;
         }
-        
         .btn-custom {
             background-color: #333;
             color: white;
@@ -138,23 +135,19 @@
             cursor: pointer;
             font-size: 12px;
         }
-        
         .btn-custom.active {
             background-color: var(--accent-color);
             border-color: var(--accent-color);
         }
-
         .slider-container {
             display: flex;
             align-items: center;
             gap: 5px;
             color: #aaa;
         }
-
         .slider-container input[type="range"] {
             width: 70px;
         }
-
         #closeBtn {
             background-color: transparent;
             color: white;
@@ -162,26 +155,35 @@
             padding: 5px 15px;
             border-radius: 4px;
             font-weight: bold;
+            cursor: pointer;
         }
-
         .iframe-container {
             flex-grow: 1;
             width: 100%;
             background: #000;
         }
-
         #playerIframe {
             width: 100%;
             height: 100%;
             border: none;
             transition: filter 0.3s;
         }
-
         #loadingMsg {
             text-align: center;
             padding: 20px;
             color: #888;
             display: none;
+        }
+        .exclusive-badge {
+            position: absolute;
+            background: var(--accent-color);
+            color: white;
+            padding: 2px 5px;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin: 5px;
+            z-index: 10;
         }
     </style>
 </head>
@@ -200,7 +202,13 @@
             <div class="row" id="searchRow"></div>
         </div>
 
-        <!-- NEW RELEASES SECTION -->
+        <!-- EXCLUSIVE HINDI DUBBED (MANUAL LINKS) -->
+        <div class="category">
+            <h2>🔥 Exclusive Hindi Dubbed (Direct HD)</h2>
+            <div class="row" id="manualHindiRow"></div>
+        </div>
+
+        <!-- TMDB AUTO CATEGORIES -->
         <div class="category">
             <h2>🔥 Latest Releases (New)</h2>
             <div class="row" id="latestRow"></div>
@@ -215,38 +223,22 @@
             <h2>Hollywood Blockbusters</h2>
             <div class="row" id="hollywoodRow"></div>
         </div>
-
+        
         <div class="category">
             <h2>Bollywood Hits</h2>
             <div class="row" id="bollywoodRow"></div>
         </div>
-
-        <div class="category">
-            <h2>South Indian (Dubbed)</h2>
-            <div class="row" id="southIndianRow"></div>
-        </div>
-
     </main>
 
     <div id="playerModal">
         <div class="player-header">
-            <div class="control-group">
+            <div class="control-group" id="audioControls">
                 <button class="btn-custom active" id="btnAudioEng" onclick="setAudio('en')">English</button>
                 <button class="btn-custom" id="btnAudioHin" onclick="setAudio('hi')">Hindi/Dual</button>
             </div>
             <div class="control-group">
-                <span style="color:#aaa;">Quality:</span>
-                <button class="btn-custom active">Auto</button>
-                <button class="btn-custom" onclick="alert('Premium Direct Link Required for fixed 720p')">720p</button>
-                <button class="btn-custom" onclick="alert('Premium Direct Link Required for fixed 1080p')">1080p</button>
-            </div>
-            <div class="control-group">
-                <div class="slider-container">
-                    ☀️ <input type="range" id="brightnessSlider" min="0.5" max="1.5" step="0.1" value="1">
-                </div>
-                <div class="slider-container">
-                    🌗 <input type="range" id="contrastSlider" min="0.5" max="1.5" step="0.1" value="1">
-                </div>
+                <div class="slider-container">☀️ <input type="range" id="brightnessSlider" min="0.5" max="1.5" step="0.1" value="1"></div>
+                <div class="slider-container">🌗 <input type="range" id="contrastSlider" min="0.5" max="1.5" step="0.1" value="1"></div>
             </div>
             <button id="closeBtn">X Close</button>
         </div>
@@ -257,6 +249,63 @@
     </div>
 
     <script>
+        // ==========================================
+        // 1. MANUAL MOVIES LOGIC (vcloud links)
+        // ==========================================
+        const manualMovies = [
+            {
+                title: "Deadpool & Wolverine (Hindi)",
+                poster: "https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
+                // Dhyan de: embed ke liye /e/ lagaya gaya hai
+                link: "https://vcloud.fit/e/vvxrvrrr1uqlx4x"
+            }
+            // Future me aur movies yahan add kar sakte hain
+        ];
+
+        function loadManualMovies() {
+            const row = document.getElementById('manualHindiRow');
+            manualMovies.forEach(movie => {
+                const div = document.createElement('div');
+                div.style.position = 'relative';
+                
+                const badge = document.createElement('div');
+                badge.className = 'exclusive-badge';
+                badge.innerText = 'HD HINDI';
+                
+                const img = document.createElement('img');
+                img.src = movie.poster;
+                img.className = 'poster';
+                img.alt = movie.title;
+                
+                img.onclick = () => openManualPlayer(movie.link);
+                
+                div.appendChild(badge);
+                div.appendChild(img);
+                row.appendChild(div);
+            });
+        }
+        loadManualMovies();
+
+        function openManualPlayer(embedUrl) {
+            const modal = document.getElementById('playerModal');
+            const iframe = document.getElementById('playerIframe');
+            
+            // UI Reset
+            document.getElementById('brightnessSlider').value = 1;
+            document.getElementById('contrastSlider').value = 1;
+            iframe.style.filter = `brightness(1) contrast(1)`;
+
+            // Hide audio switch buttons (kyunki ye fix hindi audio hai)
+            document.getElementById('audioControls').style.display = 'none';
+
+            iframe.src = embedUrl;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ==========================================
+        // 2. TMDB API LOGIC (Auto Movies)
+        // ==========================================
         const API_KEY = '2d45e26903f728b925fea962b8e7ddf0';
         const BASE_URL = 'https://api.themoviedb.org/3';
         const IMG_URL = 'https://image.tmdb.org/t/p/w500';
@@ -265,8 +314,7 @@
             { id: 'latestRow', url: `/movie/now_playing?api_key=${API_KEY}&region=IN` },
             { id: 'trendingRow', url: `/trending/all/day?api_key=${API_KEY}` },
             { id: 'hollywoodRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=en&sort_by=popularity.desc` },
-            { id: 'bollywoodRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=hi&sort_by=popularity.desc` },
-            { id: 'southIndianRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=te|ta|ml|kn&sort_by=popularity.desc` }
+            { id: 'bollywoodRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=hi&sort_by=popularity.desc` }
         ];
 
         function fetchMovies(url, rowId) {
@@ -274,15 +322,12 @@
                 .then(res => res.json())
                 .then(data => {
                     const row = document.getElementById(rowId);
-                    row.innerHTML = '';
-                    if(data.results && data.results.length > 0) {
+                    if(data.results) {
                         data.results.forEach(item => {
                             if(item.poster_path) {
                                 const img = document.createElement('img');
                                 img.src = IMG_URL + item.poster_path;
                                 img.className = 'poster';
-                                img.alt = item.title || item.name;
-                                img.loading = 'lazy';
                                 const mediaType = item.media_type || 'movie';
                                 img.onclick = () => openPlayer(item.id, mediaType);
                                 row.appendChild(img);
@@ -291,7 +336,6 @@
                     }
                 });
         }
-
         categories.forEach(cat => fetchMovies(cat.url, cat.id));
 
         // Search logic
@@ -332,7 +376,9 @@
             }, 600);
         });
 
-        // Player & Controls Logic
+        // ==========================================
+        // 3. TMDB PLAYER LOGIC (Auto Embed)
+        // ==========================================
         let currentId = '';
         let currentType = '';
         const iframe = document.getElementById('playerIframe');
@@ -341,17 +387,20 @@
 
         function openPlayer(id, type) {
             currentId = id;
-            currentType = (type === 'tv') ? 'tv' : 'movie';
+            currentType = type === 'tv' ? 'tv' : 'movie';
             const modal = document.getElementById('playerModal');
+            
+            // Ensure audio controls are visible for TMDB movies
+            document.getElementById('audioControls').style.display = 'flex';
+            
+            bSlider.value = 1; 
+            cSlider.value = 1; 
+            applyPictureAdjustments();
+            
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             
-            // Reset adjustments
-            bSlider.value = 1;
-            cSlider.value = 1;
-            applyPictureAdjustments();
-            
-            setAudio('en'); // Default play
+            setAudio('en');
         }
 
         function setAudio(lang) {
@@ -363,7 +412,6 @@
                 iframe.src = `https://vidsrc.me/embed/${currentType}/${currentId}`;
             } else {
                 document.getElementById('btnAudioHin').classList.add('active');
-                // Autoembed server has high chances of Hindi/Dual audio
                 if(currentType === 'movie') {
                     iframe.src = `https://autoembed.co/movie/tmdb/${currentId}`;
                 } else {
@@ -375,17 +423,17 @@
         function applyPictureAdjustments() {
             iframe.style.filter = `brightness(${bSlider.value}) contrast(${cSlider.value})`;
         }
-
+        
         bSlider.addEventListener('input', applyPictureAdjustments);
         cSlider.addEventListener('input', applyPictureAdjustments);
-
+        
+        // Modal Close Button
         document.getElementById('closeBtn').onclick = () => {
-            const modal = document.getElementById('playerModal');
-            modal.style.display = 'none';
+            document.getElementById('playerModal').style.display = 'none';
             iframe.src = '';
             document.body.style.overflow = '';
         };
     </script>
 </body>
-  </html>
-  
+    </html>
+    
