@@ -55,10 +55,6 @@
             outline: none;
             transition: all 0.3s;
         }
-        input[type="text"]:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 8px rgba(255, 0, 68, 0.4);
-        }
         .category {
             margin-top: 25px;
             padding-left: 15px;
@@ -98,7 +94,6 @@
             transform: scale(0.95);
         }
         
-        /* Modal & Player Settings */
         #playerModal {
             position: fixed;
             top: 0;
@@ -115,7 +110,7 @@
             padding: 10px 15px;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #333;
@@ -123,17 +118,17 @@
         .control-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
             font-size: 12px;
         }
         .btn-custom {
             background-color: #333;
             color: white;
             border: 1px solid #555;
-            padding: 5px 10px;
+            padding: 5px 8px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
         }
         .btn-custom.active {
             background-color: var(--accent-color);
@@ -142,17 +137,17 @@
         .slider-container {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             color: #aaa;
         }
         .slider-container input[type="range"] {
-            width: 70px;
+            width: 60px;
         }
         #closeBtn {
             background-color: transparent;
             color: white;
             border: 1px solid white;
-            padding: 5px 15px;
+            padding: 5px 12px;
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
@@ -174,17 +169,6 @@
             color: #888;
             display: none;
         }
-        .exclusive-badge {
-            position: absolute;
-            background: var(--accent-color);
-            color: white;
-            padding: 2px 5px;
-            font-size: 10px;
-            font-weight: bold;
-            border-radius: 4px;
-            margin: 5px;
-            z-index: 10;
-        }
     </style>
 </head>
 <body>
@@ -202,13 +186,6 @@
             <div class="row" id="searchRow"></div>
         </div>
 
-        <!-- EXCLUSIVE HINDI DUBBED (MANUAL LINKS) -->
-        <div class="category">
-            <h2>🔥 Exclusive Hindi Dubbed (Direct HD)</h2>
-            <div class="row" id="manualHindiRow"></div>
-        </div>
-
-        <!-- TMDB AUTO CATEGORIES -->
         <div class="category">
             <h2>🔥 Latest Releases (New)</h2>
             <div class="row" id="latestRow"></div>
@@ -232,9 +209,10 @@
 
     <div id="playerModal">
         <div class="player-header">
-            <div class="control-group" id="audioControls">
-                <button class="btn-custom active" id="btnAudioEng" onclick="setAudio('en')">English</button>
-                <button class="btn-custom" id="btnAudioHin" onclick="setAudio('hi')">Hindi/Dual</button>
+            <div class="control-group">
+                <button class="btn-custom active" id="btnSrv1" onclick="switchServer(1)">Server 1 (Hindi/Auto)</button>
+                <button class="btn-custom" id="btnSrv2" onclick="switchServer(2)">Server 2</button>
+                <button class="btn-custom" id="btnSrv3" onclick="switchServer(3)">Server 3</button>
             </div>
             <div class="control-group">
                 <div class="slider-container">☀️ <input type="range" id="brightnessSlider" min="0.5" max="1.5" step="0.1" value="1"></div>
@@ -249,63 +227,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // 1. MANUAL MOVIES LOGIC (vcloud links)
-        // ==========================================
-        const manualMovies = [
-            {
-                title: "Deadpool & Wolverine (Hindi)",
-                poster: "https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
-                // Dhyan de: embed ke liye /e/ lagaya gaya hai
-                link: "https://vcloud.fit/e/vvxrvrrr1uqlx4x"
-            }
-            // Future me aur movies yahan add kar sakte hain
-        ];
-
-        function loadManualMovies() {
-            const row = document.getElementById('manualHindiRow');
-            manualMovies.forEach(movie => {
-                const div = document.createElement('div');
-                div.style.position = 'relative';
-                
-                const badge = document.createElement('div');
-                badge.className = 'exclusive-badge';
-                badge.innerText = 'HD HINDI';
-                
-                const img = document.createElement('img');
-                img.src = movie.poster;
-                img.className = 'poster';
-                img.alt = movie.title;
-                
-                img.onclick = () => openManualPlayer(movie.link);
-                
-                div.appendChild(badge);
-                div.appendChild(img);
-                row.appendChild(div);
-            });
-        }
-        loadManualMovies();
-
-        function openManualPlayer(embedUrl) {
-            const modal = document.getElementById('playerModal');
-            const iframe = document.getElementById('playerIframe');
-            
-            // UI Reset
-            document.getElementById('brightnessSlider').value = 1;
-            document.getElementById('contrastSlider').value = 1;
-            iframe.style.filter = `brightness(1) contrast(1)`;
-
-            // Hide audio switch buttons (kyunki ye fix hindi audio hai)
-            document.getElementById('audioControls').style.display = 'none';
-
-            iframe.src = embedUrl;
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // ==========================================
-        // 2. TMDB API LOGIC (Auto Movies)
-        // ==========================================
         const API_KEY = '2d45e26903f728b925fea962b8e7ddf0';
         const BASE_URL = 'https://api.themoviedb.org/3';
         const IMG_URL = 'https://image.tmdb.org/t/p/w500';
@@ -376,9 +297,7 @@
             }, 600);
         });
 
-        // ==========================================
-        // 3. TMDB PLAYER LOGIC (Auto Embed)
-        // ==========================================
+        // Player & Multi-Server Logic
         let currentId = '';
         let currentType = '';
         const iframe = document.getElementById('playerIframe');
@@ -388,35 +307,38 @@
         function openPlayer(id, type) {
             currentId = id;
             currentType = type === 'tv' ? 'tv' : 'movie';
-            const modal = document.getElementById('playerModal');
-            
-            // Ensure audio controls are visible for TMDB movies
-            document.getElementById('audioControls').style.display = 'flex';
             
             bSlider.value = 1; 
             cSlider.value = 1; 
             applyPictureAdjustments();
             
-            modal.style.display = 'flex';
+            document.getElementById('playerModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
             
-            setAudio('en');
+            // Hamesha Server 1 pehle chalega (Hindi/Dual Audio support wala)
+            switchServer(1);
         }
 
-        function setAudio(lang) {
-            document.getElementById('btnAudioEng').classList.remove('active');
-            document.getElementById('btnAudioHin').classList.remove('active');
-            
-            if(lang === 'en') {
-                document.getElementById('btnAudioEng').classList.add('active');
-                iframe.src = `https://vidsrc.me/embed/${currentType}/${currentId}`;
-            } else {
-                document.getElementById('btnAudioHin').classList.add('active');
+        function switchServer(num) {
+            document.getElementById('btnSrv1').classList.remove('active');
+            document.getElementById('btnSrv2').classList.remove('active');
+            document.getElementById('btnSrv3').classList.remove('active');
+
+            document.getElementById(`btnSrv${num}`).classList.add('active');
+
+            if(num === 1) {
+                // Server 1: Autoembed (Best for Hindi/Dual audio tracks)
                 if(currentType === 'movie') {
                     iframe.src = `https://autoembed.co/movie/tmdb/${currentId}`;
                 } else {
                     iframe.src = `https://autoembed.co/tv/tmdb/${currentId}-1-1`;
                 }
+            } else if(num === 2) {
+                // Server 2: Vidsrc.me
+                iframe.src = `https://vidsrc.me/embed/${currentType}/${currentId}`;
+            } else if(num === 3) {
+                // Server 3: Multiembed alternative
+                iframe.src = `https://multiembed.mov/?video_id=${currentId}&tmdb=1`;
             }
         }
 
@@ -427,7 +349,6 @@
         bSlider.addEventListener('input', applyPictureAdjustments);
         cSlider.addEventListener('input', applyPictureAdjustments);
         
-        // Modal Close Button
         document.getElementById('closeBtn').onclick = () => {
             document.getElementById('playerModal').style.display = 'none';
             iframe.src = '';
@@ -435,5 +356,4 @@
         };
     </script>
 </body>
-    </html>
-    
+</html>
