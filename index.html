@@ -41,7 +41,6 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255, 0, 68, 0.5);
             text-align: center;
         }
         input[type="text"] {
@@ -53,7 +52,6 @@
             color: white;
             font-size: 16px;
             outline: none;
-            transition: all 0.3s;
         }
         .category {
             margin-top: 25px;
@@ -62,7 +60,6 @@
         h2 {
             font-size: 18px;
             margin-bottom: 12px;
-            font-weight: 600;
             color: #ddd;
             border-left: 4px solid var(--accent-color);
             padding-left: 8px;
@@ -73,13 +70,9 @@
             gap: 12px;
             padding-right: 15px;
             padding-bottom: 10px;
-            scroll-behavior: smooth;
-            -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .row::-webkit-scrollbar {
-            display: none;
-        }
+        .row::-webkit-scrollbar { display: none; }
         .poster {
             width: 130px;
             height: 195px;
@@ -87,19 +80,12 @@
             border-radius: 8px;
             cursor: pointer;
             flex-shrink: 0;
-            transition: transform 0.2s, box-shadow 0.2s;
             background: #1a2238;
         }
-        .poster:active {
-            transform: scale(0.95);
-        }
-        
         #playerModal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
             background-color: #000;
             z-index: 1000;
             display: none;
@@ -109,17 +95,13 @@
             background-color: #111;
             padding: 10px 15px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #333;
         }
         .control-group {
             display: flex;
-            align-items: center;
             gap: 6px;
-            font-size: 12px;
         }
         .btn-custom {
             background-color: #333;
@@ -140,15 +122,17 @@
             border: 1px solid white;
             padding: 5px 12px;
             border-radius: 4px;
-            font-weight: bold;
             cursor: pointer;
         }
-        .iframe-container {
+        .media-container {
             flex-grow: 1;
             width: 100%;
             background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        #playerIframe {
+        #playerIframe, #nativeVideo {
             width: 100%;
             height: 100%;
             border: none;
@@ -170,30 +154,17 @@
     </header>
 
     <main>
-        <div id="loadingMsg">Movie load ho rahi hai...</div>
-
+        <div id="loadingMsg">Hindi movie talashi ja rahi hai...</div>
         <div id="searchResults" class="category" style="display:none;">
             <h2>Search Results</h2>
             <div class="row" id="searchRow"></div>
         </div>
-
         <div class="category">
-            <h2>🔥 Latest Releases (New)</h2>
+            <h2>🔥 Latest Releases</h2>
             <div class="row" id="latestRow"></div>
         </div>
-
         <div class="category">
-            <h2>Trending Now</h2>
-            <div class="row" id="trendingRow"></div>
-        </div>
-
-        <div class="category">
-            <h2>Hollywood Blockbusters</h2>
-            <div class="row" id="hollywoodRow"></div>
-        </div>
-        
-        <div class="category">
-            <h2>Bollywood Hits</h2>
+            <h2>Bollywood & Hollywood Hits</h2>
             <div class="row" id="bollywoodRow"></div>
         </div>
     </main>
@@ -201,15 +172,16 @@
     <div id="playerModal">
         <div class="player-header">
             <div class="control-group">
-                <button class="btn-custom active" id="btnSrv1" onclick="switchServer(1)">Server 1 (Smart Auto)</button>
+                <button class="btn-custom active" id="btnSrv1" onclick="switchServer(1)">Server 1 (Direct Hindi)</button>
                 <button class="btn-custom" id="btnSrv2" onclick="switchServer(2)">Server 2 (Backup)</button>
                 <button class="btn-custom" id="btnSrv3" onclick="switchServer(3)">Server 3 (Alt)</button>
             </div>
             <button id="closeBtn">X Close</button>
         </div>
         
-        <div class="iframe-container">
-            <iframe id="playerIframe" allowfullscreen></iframe>
+        <div class="media-container" id="mediaBox">
+            <iframe id="playerIframe" allowfullscreen style="display:none;"></iframe>
+            <video id="nativeVideo" controls controlsList="nodownload" style="display:none;"></video>
         </div>
     </div>
 
@@ -219,12 +191,10 @@
         const IMG_URL = 'https://image.tmdb.org/t/p/w500';
         const BACKEND_URL = 'https://flixbackend-zpgi.onrender.com';
 
-        let activeLinks = { s1: '', s2: '', s3: '' };
+        let activeLinks = { s1: '', s2: '', s3: '', type: 'embed' };
 
         const categories = [
             { id: 'latestRow', url: `/movie/now_playing?api_key=${API_KEY}&region=IN` },
-            { id: 'trendingRow', url: `/trending/all/day?api_key=${API_KEY}` },
-            { id: 'hollywoodRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=en&sort_by=popularity.desc` },
             { id: 'bollywoodRow', url: `/discover/movie?api_key=${API_KEY}&with_original_language=hi&sort_by=popularity.desc` }
         ];
 
@@ -248,49 +218,10 @@
         }
         categories.forEach(cat => fetchMovies(cat.url, cat.id));
 
-        // Search logic
-        const searchInput = document.getElementById('searchInput');
-        const searchSection = document.getElementById('searchResults');
-        const searchRow = document.getElementById('searchRow');
-        const loadingMsg = document.getElementById('loadingMsg');
-        let debounceTimer;
-
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(debounceTimer);
-            const query = e.target.value.trim();
-            if (query === '') {
-                searchSection.style.display = 'none';
-                return;
-            }
-            loadingMsg.style.display = 'block';
-            loadingMsg.innerText = "Searching...";
-            debounceTimer = setTimeout(() => {
-                fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        searchRow.innerHTML = '';
-                        loadingMsg.style.display = 'none';
-                        const results = data.results ? data.results.filter(item => (item.media_type === 'movie' || item.media_type === 'tv') && item.poster_path) : [];
-                        if(results.length > 0) {
-                            searchSection.style.display = 'block';
-                            results.forEach(item => {
-                                const img = document.createElement('img');
-                                img.src = IMG_URL + item.poster_path;
-                                img.className = 'poster';
-                                img.onclick = () => selectMovie(item);
-                                searchRow.appendChild(img);
-                            });
-                        } else {
-                            searchSection.style.display = 'none';
-                        }
-                    });
-            }, 600);
-        });
-
         async function selectMovie(item) {
             const title = item.title || item.name;
             loadingMsg.style.display = 'block';
-            loadingMsg.innerText = `Connecting to Server for "${title}"...`;
+            loadingMsg.innerText = `Searching Hindi link for "${title}"...`;
 
             try {
                 const response = await fetch(`${BACKEND_URL}/find_hindi_movie?title=${encodeURIComponent(title)}`);
@@ -301,24 +232,22 @@
                     activeLinks.s1 = data.server1;
                     activeLinks.s2 = data.server2;
                     activeLinks.s3 = data.server3;
+                    activeLinks.type = data.type;
 
-                    // Open player and automatically start Server 1
                     openPlayerModal();
                     switchServer(1);
-                } else {
-                    alert("Movie link nahi mila!");
                 }
             } catch (err) {
                 loadingMsg.style.display = 'none';
-                console.error("Error:", err);
-                // Fallback default
                 activeLinks.s1 = `https://vidsrc.to/embed/movie/${item.id}`;
+                activeLinks.type = 'embed';
                 openPlayerModal();
                 switchServer(1);
             }
         }
 
         const iframe = document.getElementById('playerIframe');
+        const video = document.getElementById('nativeVideo');
 
         function openPlayerModal() {
             document.getElementById('playerModal').style.display = 'flex';
@@ -329,24 +258,32 @@
             document.getElementById('btnSrv1').classList.remove('active');
             document.getElementById('btnSrv2').classList.remove('active');
             document.getElementById('btnSrv3').classList.remove('active');
-
             document.getElementById(`btnSrv${num}`).classList.add('active');
 
-            if(num === 1) {
-                iframe.src = activeLinks.s1;
-            } else if(num === 2) {
-                iframe.src = activeLinks.s2;
-            } else if(num === 3) {
-                iframe.src = activeLinks.s3;
+            let targetLink = num === 1 ? activeLinks.s1 : (num === 2 ? activeLinks.s2 : activeLinks.s3);
+
+            // Agar Server 1 direct pixeldrain/video link hai toh video player chalega, warna iframe
+            if (num === 1 && activeLinks.type === 'direct' && (targetLink.includes('pixeldrain') || targetLink.endsWith('.mp4') || targetLink.endsWith('.mkv'))) {
+                iframe.style.display = 'none';
+                video.style.display = 'block';
+                video.src = targetLink;
+                video.play().catch(e => console.log("Auto-play blocked"));
+            } else {
+                video.style.display = 'none';
+                video.pause();
+                video.src = '';
+                iframe.style.display = 'block';
+                iframe.src = targetLink;
             }
         }
         
         document.getElementById('closeBtn').onclick = () => {
             document.getElementById('playerModal').style.display = 'none';
             iframe.src = '';
+            video.pause();
+            video.src = '';
             document.body.style.overflow = '';
         };
     </script>
 </body>
-                    </html>
-                    
+</html>
